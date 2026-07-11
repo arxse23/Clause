@@ -1,14 +1,20 @@
-from database import get_messages
+from database import get_messages, get_doc
 
 def prepare_messages():
     saved_messages = get_messages()
-    print(saved_messages)
     converted_list = []
-    system_prompt = {"role": "system", "content": "You are a helpful, professional assistant. Rely on the conversation history if you need to, when it's relevant."}
-    converted_list.append(system_prompt)
     for msg in saved_messages:
         role=msg[1]
         content=msg[2]
         converted_dict={"role": role, "content": content}
         converted_list.append(converted_dict)
     return converted_list   
+
+def prepare_doc():
+    saved_docs = get_doc()
+    docs_list = []
+    for doc in saved_docs:
+        content = doc[2]
+        docs_dict = {"role": "system", "content": f"Here is a document the user uploaded: {content}"}
+        docs_list.append(docs_dict)
+    return docs_list

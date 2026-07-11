@@ -24,6 +24,13 @@ Ask AI
 
 </form>
 
-</body>
+<form method="POST" action="/upload" enctype="multipart/form-data">
+  <input type="file" name="file" accept=".txt,.doc,.docx,.pdf">
+  <input type="submit" value="Upload">
+</form>
 
+
+<p>{{ answer }}</p>
+
+</body>
 </html>
