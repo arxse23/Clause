@@ -1,0 +1,62 @@
+AI Assistant Project Roadmap
+Current Version — Local AI Assistant with Memory ✅
+The foundation of the project is a locally hosted AI assistant powered by an LLM running through Ollama.
+Current capabilities:
+
+Flask web application backend
+Local LLM integration using Ollama
+SQLite database for persistent conversation storage
+Conversation history retrieval
+Context formatting for AI conversations
+Basic system prompting
+Modular project structure:
+
+app.py — application routes and request handling
+database.py — database operations
+ai.py — AI message preparation
+
+Future Development Plans
+Phase 1 — Improve Memory System ✅✅
+Move from simple chat history storage to a proper memory system.
+      Separate conversation history from long-term memories
+      Create a dedicated memory database table
+      Store important user facts separately from messages
+      Add timestamps and memory categories
+      Allow the assistant to retrieve relevant memories instead of sending the entire chat history
+
+Phase 2 — Document Assistant Features ✅✅
+Transform the project into a true AI document assistant.
+      Upload documents (PDF, TXT, DOCX)
+      Extract and process text
+      Search documents using AI
+      Ask questions about uploaded files
+      Provide answers with relevant document context
+
+Phase 3 — Retrieval-Augmented Generation (RAG) 
+Improve AI accuracy by retrieving relevant information before generating responses.
+      Text chunking ✅
+      Embeddings
+      Vector database integration
+      Semantic search
+      Relevant context retrieval
+
+Phase 4 — User Experience Improvements 
+      Chat interface improvements
+      Conversation history sidebar
+      Multiple conversations
+      User accounts
+      File management
+      Settings page  
+      Model selection
+
+Phase 5 — Production Improvements ⚙️
+      Environment variables
+      Better error handling
+      Logging
+      Database migrations
+      Automated testing
+      Deployment
+      Security improvements
+
+Long-Term Vision
+A personal AI assistant that can remember useful information, understand uploaded documents, retrieve knowledge when needed, run locally for privacy, and provide a personalised assistant experience.
