@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 import ollama
-from database import save_message, create_database, save_doc, get_doc
+from database import save_message, create_database, save_doc, get_doc, clear_database
 from ai import prepare_messages, prepare_doc
-from file_reader import read_pdf, read_txt
+from file_reader import read_pdf, read_txt, read_docx
 
 app = Flask(__name__)
 
@@ -14,13 +14,15 @@ def home():
     return render_template("index.html")
 
 def is_allowed_file(uploaded_file):
-    ALLOWED_EXTENSIONS = {'pdf', 'txt'}
+    ALLOWED_EXTENSIONS = {'pdf', 'txt', 'docx'}
     extension = uploaded_file.filename.rsplit('.', 1)[1].lower()
     if extension in ALLOWED_EXTENSIONS:
         return True
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
+    clear_database()
+    create_database()
     uploaded_file = request.files["file"]
     extension = uploaded_file.filename.rsplit('.', 1)[1].lower()
 
@@ -30,12 +32,28 @@ def upload_file():
 
         if extension == 'pdf':
             parsed_pdf = read_pdf(uploaded_file)
-            save_doc(uploaded_file.filename, parsed_pdf, "pdf")
+            print(type(parsed_pdf))
+            print(parsed_pdf[0])
+            for doc in parsed_pdf:
+                content=doc['content']
+                chunk_header=doc['chunk_header']
+                save_doc(uploaded_file.filename, content, 'pdf', chunk_header)            
             print(f"Saved pdf: {uploaded_file.filename}")
 
         elif extension == 'txt':
             parsed_txt = read_txt(uploaded_file.filename)
-            save_doc(uploaded_file.filename, parsed_txt, "txt")
+            for doc in parsed_txt:
+                content=doc['content']
+                chunk_header=doc['chunk_header']
+                save_doc(uploaded_file.filename, content, 'txt', chunk_header)
+            print(f"Saved txt: {uploaded_file.filename}")
+
+        elif extension == 'docx':
+            parsed_docx = read_docx(uploaded_file)
+            for doc in parsed_docx:   
+                content=doc['content']
+                chunk_header=doc['chunk_header']
+                save_doc(uploaded_file.filename, content, 'docx', chunk_header)
 
         return redirect(url_for('home'))
     

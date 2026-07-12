@@ -15,6 +15,7 @@ def prepare_doc():
     docs_list = []
     for doc in saved_docs:
         content = doc[2]
-        docs_dict = {"role": "system", "content": f"Here is a document the user uploaded: {content}"}
+        chunk_header = doc[4]
+        docs_dict = {"role": "system", "content": f"This is an excerpt from the uploaded document, under the heading '{chunk_header}': {content}"}
         docs_list.append(docs_dict)
     return docs_list

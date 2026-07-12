@@ -1,2 +1,4 @@
 flask
 ollama
+pypdf
+python-docx
