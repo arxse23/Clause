@@ -2,3 +2,5 @@ flask
 ollama
 pypdf
 python-docx
+werkzeug.utils
+pdfplumber
