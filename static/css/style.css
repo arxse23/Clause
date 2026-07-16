@@ -272,3 +272,9 @@ body {
     background-color: #dc2626 !important;
     box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
 }
+
+.sources {
+    font-size: 11px;
+    color: #94a3b8;
+    margin-top: 6px;
+}

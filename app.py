@@ -120,10 +120,11 @@ def ask():
 
     answer = response["message"]["content"]
     save_message("assistant", answer, doc_id)
-    
+    sources = [c['chunk_header'] for c in top_chunks]
     return jsonify({
         "status": "success",
-        "answer": answer
+        "answer": answer,
+        "sources": sources
     })
 
 @app.route("/delete/<int:doc_id>", methods=["POST"])
@@ -140,6 +141,7 @@ def delete_doc(doc_id):
 def clear_system_db():
     # Trigger drop and reconstruct loops safely
     clear_database()
+    create_database()
     # Flash state arrays back to starting home terminal point context layouts
     return redirect(url_for('home'))
 

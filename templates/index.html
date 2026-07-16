@@ -119,6 +119,8 @@
         }
 
         function toggleLoadingState(isLoading) {
+            document.title = isLoading ? "⏳ Thinking… — AI Document Assistant"
+                                    : "AI Document Assistant";
             if (isLoading) {
                 submitBtn.disabled = true;
                 submitBtn.innerText = "Thinking...";
@@ -166,6 +168,18 @@
                 toggleLoadingState(false);
                 if (data.status === 'success') {
                     appendMessageBubble('ai-msg', data.answer);
+                    if (data.sources && data.sources.length) {
+                        const src = document.createElement('div');
+                        src.className = 'sources';
+                        src.innerText = 'from: ' + data.sources.join(' · ');
+                        chatWindow.lastElementChild.appendChild(src);
+                    }
+                    if (data.answer.length > 600) {
+                        const warn = document.createElement('div');
+                        warn.className = 'length-warning';
+                        warn.innerText = '⚠ long answers are less reliable on this model';
+                        chatWindow.lastElementChild.appendChild(warn);
+                    }
                 } else {
                     appendMessageBubble('system-msg', "Error parsing output tokens safely.");
                 }
