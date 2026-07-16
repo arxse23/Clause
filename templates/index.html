@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Document Assistant</title>
+    <title>Clause</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 
-    <header class="app-header">
-        <h2>📄 AI Document Assistant</h2>
+    <header class="app-header ">
+        <h2 class="header-title-text">Clause.</h2>
     </header>
 
     <main class="app-container">
@@ -17,8 +19,7 @@
     <!-- LEFT PANEL: Upload & Active Document Library -->
     <section class="document-panel">
         <div class="panel-content">
-            <h3>Document Library</h3>
-            
+        
             <!-- File Upload Form Configuration Layout Matrix -->
             <form class="upload-box" method="POST" action="/upload" enctype="multipart/form-data">
                 <label for="file" class="file-label">
@@ -31,12 +32,12 @@
             <!-- ✅ ADDED: Structural Clear Database Action Form Wrapper Component Block -->
             <form action="/clear-system-db" method="POST" onsubmit="return confirm('⚠️ WARNING: This will permanently wipe all uploaded files, vectorized embeddings, and conversation histories. Continue?');" style="margin-bottom: 25px;">
                 <button type="submit" class="btn-clear-all" style="width: 100%; background-color: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
-                    🗑️ Clear Entire Database System
+                     Clear Entire Database System
                 </button>
             </form>
 
             <div class="loaded-docs-list">
-                <h4>Active System Files</h4>
+                <h4>Files:</h4>
                     {% if docs %}
                         <ul>
                         {% for d in docs %}
