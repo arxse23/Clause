@@ -20,7 +20,16 @@ def prepare_doc():
     for doc in saved_docs:
         content = doc[2]
         chunk_header = doc[4]
-        docs_dict = {"role": "system", "content": f"This is an excerpt from the uploaded document, under the heading '{chunk_header}': {content}"}
+        docs_dict = {
+            "role": "system",
+            "content": f"""
+        DOCUMENT SECTION:
+        {chunk_header}
+
+        CONTENT:
+        {content}
+        """
+        }
         docs_list.append(docs_dict)
     return docs_list
 
@@ -51,7 +60,7 @@ def decode_content(question):
         score = cosine_similarity(question, decoded_string)
         docs_list.append({"content": content, "chunk_header": chunk_header, "score": score})
     sorted_list = sorted(docs_list, key=lambda item: item["score"], reverse=True)
-    print(f'\n\n{sorted_list}')
+
     return sorted_list
     
 def prepare_top_chunks(top_chunks):
@@ -59,8 +68,17 @@ def prepare_top_chunks(top_chunks):
     for doc in top_chunks:
         content = doc["content"]
         chunk_header = doc["chunk_header"]
-        docs_list.append({"role": "system", "content": f'This is an excerpt from the uploaded document, under the heading {chunk_header}: {content}'})
-    print(f'\n\n{docs_list}')
+        docs_list.append({
+            "role": "system",
+            "content": f"""
+        DOCUMENT SECTION:
+        {chunk_header}
+
+        CONTENT:
+        {content}
+        """
+        })
+
     return docs_list                 
 
 def extract_clause_number(question):

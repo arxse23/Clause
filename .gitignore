@@ -2,4 +2,4 @@ __pycache__/
 venv/
 assistant.db
 *.pdf
-*.md
+table_recon.py
