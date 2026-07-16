@@ -1,40 +1,180 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Document Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
 
-<h1>AI Document Assistant</h1>
+    <header class="app-header">
+        <h2>📄 AI Document Assistant</h2>
+    </header>
 
-<form action="/ask" method="POST">
-  <input type="hidden" name="doc_id" value="1">
+    <main class="app-container">
+        
+    <!-- LEFT PANEL: Upload & Active Document Library -->
+    <section class="document-panel">
+        <div class="panel-content">
+            <h3>Document Library</h3>
+            
+            <!-- File Upload Form Configuration Layout Matrix -->
+            <form class="upload-box" method="POST" action="/upload" enctype="multipart/form-data">
+                <label for="file" class="file-label">
+                    <span>Select file (.pdf, .txt, .docx)</span>
+                    <input type="file" name="file" accept=".txt,.doc,.docx,.pdf" id="file" required>
+                </label>
+                <button type="submit" class="btn-upload">Upload File</button>
+            </form>
 
-<textarea name="question"
-placeholder="Ask something..."
-rows="5"
-cols="50"></textarea>
+            <!-- ✅ ADDED: Structural Clear Database Action Form Wrapper Component Block -->
+            <form action="/clear-system-db" method="POST" onsubmit="return confirm('⚠️ WARNING: This will permanently wipe all uploaded files, vectorized embeddings, and conversation histories. Continue?');" style="margin-bottom: 25px;">
+                <button type="submit" class="btn-clear-all" style="width: 100%; background-color: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                    🗑️ Clear Entire Database System
+                </button>
+            </form>
 
-<br>
+            <div class="loaded-docs-list">
+                <h4>Active System Files</h4>
+                    {% if docs %}
+                        <ul>
+                        {% for d in docs %}
+                            <li>
+                                <span class="doc-title" title="{{ d[1] }}">{{ d[1] }}</span>
+                                <form action="{{ url_for('delete_doc', doc_id=d[0]) }}" method="POST" onsubmit="return confirm('Delete this file from knowledge system context?');">
+                                    <button type="submit" class="btn-delete">Delete</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="empty-hint">No files inside database library.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
 
-<button type="submit">
-Ask AI
-</button>
+        <!-- RIGHT PANEL: Chat Workspace Prompt Panel -->
+        <section class="chat-panel">
+            <div class="chat-history" id="chatHistoryWindow">
+                <div class="message system-msg" id="placeholderMessage">
+                    Please pick an active database document below to initialize your workspace log.
+                </div>
+            </div>
+            
+            <form class="chat-input-area" id="aiQueryForm">
+                <div class="selector-wrapper">
+                    <label for="doc_id">Select Document Context Target:</label>
+                    <select id="doc_id" name="doc_id" required onchange="loadDocumentChatHistory(this.value)">
+                        <option value="" disabled selected>-- Choose File --</option>
+                        {% for d in docs %}
+                            <option value="{{ d[0] }}">{{ d[1] }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-</form>
+                <div class="input-wrapper">
+                    <textarea id="questionField" name="question" placeholder="Ask a question about this data file..." rows="3" required></textarea>
+                    <button type="submit" class="btn-submit" id="btnSubmitQuery">Ask AI</button>
+                </div>
+            </form>
+        </section>
 
-<form method="POST" action="/upload" enctype="multipart/form-data">
-  <input type="file" name="file" accept=".txt,.doc,.docx,.pdf">
-  <input type="submit" value="Upload">
+    </main>
 
-<form method="POST" action="/clear-messages">
-  <input type="submit" value="Clear">
-</form>
+    <!-- AJAX Core Sync Script -->
+    <script>
+        const chatWindow = document.getElementById('chatHistoryWindow');
+        const queryForm = document.getElementById('aiQueryForm');
+        const questionField = document.getElementById('questionField');
+        const placeholder = document.getElementById('placeholderMessage');
+        const submitBtn = document.getElementById('btnSubmitQuery');
 
+        function loadDocumentChatHistory(docId) {
+            if (!docId) return;
+            placeholder.style.display = 'none';
+            chatWindow.innerHTML = '<div class="message system-msg">Loading conversation history...</div>';
+            
+            fetch(`/chat-history/${docId}`)
+                .then(res => res.json())
+                .then(data => {
+                    chatWindow.innerHTML = '';
+                    if (data.history && data.history.length > 0) {
+                        data.history.forEach(msg => {
+                            appendMessageBubble(msg.role === 'user' ? 'user-msg' : 'ai-msg', msg.content);
+                        });
+                    } else {
+                        chatWindow.innerHTML = '<div class="message system-msg">No previous history found for this document. Ask a question below!</div>';
+                    }
+                    scrollToBottom();
+                });
+        }
 
-<p>{{ answer }}</p>
+        function appendMessageBubble(className, text) {
+            const bubble = document.createElement('div');
+            bubble.className = `message ${className}`;
+            bubble.innerHTML = text.replace(/\n/g, '<br>');
+            chatWindow.appendChild(bubble);
+        }
 
+        function toggleLoadingState(isLoading) {
+            if (isLoading) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Thinking...";
+                const spinnerContainer = document.createElement('div');
+                spinnerContainer.id = "asyncLoaderSpinner";
+                spinnerContainer.className = "message ai-msg loading-container";
+                spinnerContainer.innerHTML = `<div class="spinner"></div><span>Ollama is evaluating document chunks...</span>`;
+                chatWindow.appendChild(spinnerContainer);
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Ask AI";
+                const spinner = document.getElementById('asyncLoaderSpinner');
+                if (spinner) spinner.remove();
+            }
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        queryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const docId = document.getElementById('doc_id').value;
+            const questionText = questionField.value.trim();
+            if (!docId || !questionText) return;
+
+            const sysMsg = chatWindow.querySelector('.system-msg');
+            if (sysMsg) sysMsg.remove();
+
+            appendMessageBubble('user-msg', questionText);
+            questionField.value = '';
+            toggleLoadingState(true);
+
+            fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ doc_id: parseInt(docId), question: questionText })
+            })
+            .then(res => {
+                if (!res.ok) throw new Error("Processing pipelines execution failure.");
+                return res.json();
+            })
+            .then(data => {
+                toggleLoadingState(false);
+                if (data.status === 'success') {
+                    appendMessageBubble('ai-msg', data.answer);
+                } else {
+                    appendMessageBubble('system-msg', "Error parsing output tokens safely.");
+                }
+            })
+            .catch(err => {
+                toggleLoadingState(false);
+                appendMessageBubble('system-msg', `Connection failure: ${err.message}`);
+            });
+        });
+    </script>
 </body>
 </html>

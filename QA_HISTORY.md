@@ -948,3 +948,5 @@ All three defects addressed solo: fragment merge ported from v1, banner-row filt
 - **#10 provenance blindness** — results are attributable only if the run announces its configuration (prompt version, source filename, code version). Three incidents this sprint (v5 prompt swap, bunnings1.pdf upload, unverified lines-strategy run) share this root.
 
 *Session note: this log covers a ~2-day sprint (roughly Jul 14–16, 2026). Assistant model may have changed mid-sprint (Claude version switch); no reliable in-conversation marker exists, so results are attributed to prompt/code/data versions only — which is the attribution that matters.*
+
+Multi-document support shipped and verified: 5-step acceptance passed (per-doc retrieval, history isolation both directions, cascade delete, empty-state guard). Three contamination doors closed: retrieval, chat history, rewriter."
