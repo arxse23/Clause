@@ -3,3 +3,4 @@ venv/
 assistant.db
 *.pdf
 table_recon.py
+find_bad_rows.py

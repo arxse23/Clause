@@ -10,6 +10,7 @@
 <h1>AI Document Assistant</h1>
 
 <form action="/ask" method="POST">
+  <input type="hidden" name="doc_id" value="1">
 
 <textarea name="question"
 placeholder="Ask something..."
@@ -27,7 +28,6 @@ Ask AI
 <form method="POST" action="/upload" enctype="multipart/form-data">
   <input type="file" name="file" accept=".txt,.doc,.docx,.pdf">
   <input type="submit" value="Upload">
-</form>
 
 <form method="POST" action="/clear-messages">
   <input type="submit" value="Clear">

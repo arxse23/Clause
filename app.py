@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 import ollama
-from database import save_message, create_database, save_doc, get_doc, clear_database, clear_messages, get_last_user_questions
+from database import save_message, create_database, save_doc, get_doc, clear_database, clear_messages, get_last_user_questions, find_doc_by_name, create_doc
 from ai import prepare_messages, prepare_doc, get_embedding, decode_content, needs_rewrite, prepare_top_chunks, extract_clause_number, rewrite_question
 from file_reader import read_pdf, read_txt, read_docx
 import json
@@ -28,10 +28,15 @@ def upload_file():
 
     if uploaded_file.filename == '':
         return "No selected file", 400
+    
 
     if is_allowed_file(uploaded_file.filename):
-        clear_database()
         create_database()
+
+        if find_doc_by_name(uploaded_file.filename) is not None:
+            return "Doc already uploaded", 400
+        else:
+            doc_id = create_doc(uploaded_file.filename)
 
         extension = uploaded_file.filename.rsplit('.', 1)[1].lower()
 
@@ -53,7 +58,7 @@ def upload_file():
             if "Table data" in content:
                 print(f"\n=== TABLE CHUNK under '{chunk_header}' ===\n{content}\n===\n")
             embedded_string = get_embedding(content, chunk_header)
-            save_doc(uploaded_file.filename, content, extension, chunk_header, embedded_string)
+            save_doc(uploaded_file.filename, content, extension, chunk_header, embedded_string, doc_id)
         
         return redirect(url_for('home'))
     
@@ -63,7 +68,8 @@ def upload_file():
 
 @app.route("/ask", methods=["POST"])
 def ask():
-    print(f"Number of docs in DB: {len(get_doc())}")
+    doc_id = request.form["doc_id"]
+    print(f"Number of docs in DB: {len(get_doc(doc_id))}")
     question = request.form["question"]
     print(f"ASK | q={question!r}")  
     previous = get_last_user_questions(2)
@@ -75,7 +81,7 @@ def ask():
     raw_embedded_question = get_embedding(question)                        
     embedded_question = json.loads(raw_embedded_question)
     extracted_number = extract_clause_number(question)
-    rank = decode_content(embedded_question)
+    rank = decode_content(embedded_question, doc_id)
     for r in rank[:8]:
         print(r['chunk_header'], r['score'])
     for item in rank:
@@ -89,8 +95,8 @@ def ask():
     
     print(f"SENT {len(top_chunks)}: {[c['chunk_header'] for c in top_chunks]}")
     
-    save_message("user", question)
-    prepared_messages = prepare_messages()
+    save_message("user", question, doc_id)
+    prepared_messages = prepare_messages(doc_id)
     prepared_doc = prepare_top_chunks(top_chunks)
     system_prompt = {"role": "system", "content": '''
     You are a helpful, professional assistant designed to help users find information in documents. Use the conversation history only to understand what the current question is referring to, not as a source of facts. Base your answer only on information explicitly present in the document excerpts below — you may combine, summarise, and reasonably apply that information (for example, working out which row of a table applies to a specific number, or recognising that a time range like '6pm to 5am' corresponds to night hours), but do not add facts, figures, or details that are not present in the excerpts. If the excerpts genuinely do not contain the answer, say so explicitly rather than guessing. Check whether multiple amounts or entitlements apply together and combine them (for example, a base rate in addition to a further rate).
@@ -114,7 +120,7 @@ def ask():
     )
 
     answer = response["message"]["content"]
-    save_message("assistant", answer)
+    save_message("assistant", answer, doc_id)
     return render_template("index.html", answer=answer)
 
 @app.route("/clear-messages", methods=["POST"])

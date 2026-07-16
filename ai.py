@@ -4,22 +4,22 @@ import json
 import math
 import re
 
-def prepare_messages():
-    saved_messages = get_messages()
+def prepare_messages(doc_id):
+    saved_messages = get_messages(doc_id)
     converted_list = []
     for msg in saved_messages:
-        role=msg[1]
-        content=msg[2]
+        role=msg[0]
+        content=msg[1]
         converted_dict={"role": role, "content": content}
         converted_list.append(converted_dict)
     return converted_list   
 
-def prepare_doc():
-    saved_docs = get_doc()
+def prepare_doc(doc_id):
+    saved_docs = get_doc(doc_id)
     docs_list = []
     for doc in saved_docs:
-        content = doc[2]
-        chunk_header = doc[4]
+        content = doc[0]
+        chunk_header = doc[1]
         docs_dict = {
             "role": "system",
             "content": f"""
@@ -49,13 +49,13 @@ def get_embedding(content, chunk_header=None):
     embedded_string = json.dumps(embedded_response)
     return embedded_string
 
-def decode_content(question):
-    saved_embedding = get_doc()
+def decode_content(question, doc_id):
+    saved_embedding = get_doc(doc_id)
     docs_list = []
     for doc in saved_embedding:
-        content = doc[2]
-        chunk_header = doc[4]
-        embedded_string= doc[5]
+        content = doc[0]
+        chunk_header = doc[1]
+        embedded_string= doc[2]
         decoded_string = json.loads(embedded_string)
         score = cosine_similarity(question, decoded_string)
         docs_list.append({"content": content, "chunk_header": chunk_header, "score": score})
