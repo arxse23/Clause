@@ -73,7 +73,8 @@
                             <option value="{{ d[0] }}">{{ d[1] }}</option>
                         {% endfor %}
                     </select>
-                </div>
+                <button type="button" class="btn-clear-chat" onclick="clearActiveChat()">Clear Message History</button>                                
+            </div>
 
                 <div class="input-wrapper">
                     <textarea id="questionField" name="question" placeholder="Ask a question about this data file..." rows="3" required></textarea>
@@ -91,6 +92,7 @@
         const questionField = document.getElementById('questionField');
         const placeholder = document.getElementById('placeholderMessage');
         const submitBtn = document.getElementById('btnSubmitQuery');
+        const docSelect = document.getElementById('doc_id');
 
         function loadDocumentChatHistory(docId) {
             if (!docId) return;
@@ -110,6 +112,13 @@
                     }
                     scrollToBottom();
                 });
+        }
+
+        function clearActiveChat() {
+            const docId = docSelect.value;
+            if (!docId) return;                        // empty-state guard — the reflex
+            fetch(`/clear-messages/${docId}`, { method: 'POST' })
+                .then(() => loadDocumentChatHistory(docId));
         }
 
         function appendMessageBubble(className, text) {

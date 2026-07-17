@@ -145,3 +145,9 @@ def clear_database():
     
     # Re-run structural deployment loops immediately to recreate blank database skeletons
     create_database()
+
+def clear_messages(doc_id):
+    connection = get_connection()
+    connection.execute("DELETE FROM messages WHERE doc_id = ?", (doc_id,))
+    connection.commit()
+    connection.close()

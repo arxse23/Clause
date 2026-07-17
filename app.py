@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 import ollama
 from database import (save_message, create_database, save_doc, get_doc, clear_database, 
                      get_last_user_questions, find_doc_by_name, 
-                      create_doc, get_connection, get_all_docs, get_chat_history_from_db)
+                      create_doc, get_connection, get_all_docs, get_chat_history_from_db, clear_messages)
 from ai import (prepare_messages, prepare_doc, get_embedding, decode_content, needs_rewrite, 
                 prepare_top_chunks, extract_clause_number, rewrite_question)
 from file_reader import read_pdf, read_txt, read_docx
 import json
+import time
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -88,6 +89,9 @@ def ask():
     extracted_number = extract_clause_number(question)
     rank = decode_content(embedded_question, doc_id)
     
+    gap = rank[0]['score'] - rank[1]['score'] if len(rank) > 1 else 1.0
+    
+
     for r in rank[:8]:
         print(r['chunk_header'], r['score'])
     for item in rank:
@@ -95,12 +99,17 @@ def ask():
             item['score'] += 1
     rank.sort(key=lambda x: x['score'], reverse=True)
     
-    if len(rank) > 3 and rank[2]['score'] - rank[3]['score'] < 0.02:
+    if gap > 0.10:
+        top_chunks = rank[:2]
+        triggered = True
+    elif len(rank) > 3 and rank[2]['score'] - rank[3]['score'] < 0.02:
         top_chunks = rank[:5]
+        triggered = False
     else:
         top_chunks = rank[:3]
+        triggered = False
     
-    print(f"SENT {len(top_chunks)}: {[c['chunk_header'] for c in top_chunks]}")
+    print(f" GAP {gap:.3f} | TRIGGERED {triggered} | SENT {len(top_chunks)}: {[c['chunk_header'] for c in top_chunks]}")
     
     save_message("user", question, doc_id)
     prepared_messages = prepare_messages(doc_id)
@@ -112,11 +121,13 @@ def ask():
     prepared_data = prepared_doc + [system_prompt] + prepared_messages
     with open("last_ask.txt", "w", encoding="utf-8") as f: f.write(str(prepared_data))
     
+    t0 = time.time()
     response = ollama.chat(
         model="llama3.2:3b",
         messages=prepared_data,
         options={"num_ctx": 8192} 
     )
+    print(f"LATENCY {time.time() - t0:.1f}s | SENT {len(top_chunks)}")
 
     answer = response["message"]["content"]
     save_message("assistant", answer, doc_id)
@@ -143,6 +154,11 @@ def clear_system_db():
     clear_database()
     create_database()
     # Flash state arrays back to starting home terminal point context layouts
+    return redirect(url_for('home'))
+
+@app.route("/clear-messages/<int:doc_id>", methods=["POST"])
+def clear_messages_route(doc_id):
+    clear_messages(doc_id)
     return redirect(url_for('home'))
 
 if __name__ == "__main__":

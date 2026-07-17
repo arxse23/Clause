@@ -1,7 +1,11 @@
 import pypdf
 import pdfplumber
 import re
+import docx
 from docx import Document
+from docx.table import Table
+from docx.text.paragraph import Paragraph
+
 
 pattern = r"(^\d+(?:\.\d+)?\s[A-Z][^\n]+)"
 
@@ -17,6 +21,7 @@ def content_split(raw_text):
                 doc_list.append({"content": content, "chunk_header": chunk_header})
         else:
             chunk_header = val.strip()
+    print(doc_list)
     return doc_list
 
 def _is_ghost(table):
@@ -197,8 +202,62 @@ def read_txt(uploaded_file):
     content = uploaded_file.read().decode('utf-8')
     return content_split(content)
 
+
+def serialise_docx_table(table):
+    if not table.rows:
+        return ""
+    
+    #extract header from first row
+    first_row = table.rows[0].cells
+    keys = tuple(cell.text.strip() for cell in first_row)
+
+    #detect garabage header
+    is_garbage_header = not keys or keys[0] == ""
+
+    data = []
+    
+    #fall back if garbage
+    if is_garbage_header:
+        for row in table.rows:
+            row_items = []
+            for cell in row.cells:
+                text = cell.text.strip()
+                if text and text not in row_items:
+                    row_items.append(text)
+            if row_items:
+                data.append(", ".join(row_items) + ".")
+    
+    else:
+        for row in table.rows[1:]:
+            text = (cell.text.strip() for cell in row.cells)
+
+            #maps keys to row valyes
+            row_pairs = [(k, v) for k, v in zip(keys, text) if k]
+
+            if row_pairs:
+                first_k, first_v = row_pairs[0] #sets the header
+                sentence_head = f'{first_k} {first_v}:'
+                body = [f'{k} {v}' for k, v in row_pairs[1:]] #sets the body from row 2
+                sentence = ", ".join(body) #joins key value as pairs into sentences seperated by ,
+
+                if sentence:
+                    data.append(f'{sentence_head} {sentence}.')
+                else:
+                    data.append(f'{first_k} {first_v}.')
+
+                
+    return '\n'.join(data)
+    
 def read_docx(uploaded_file):
     doc = Document(uploaded_file.stream)
-    docx_list = [paragraph.text for paragraph in doc.paragraphs if paragraph.text]
-    content = '\n'.join(docx_list)
-    return content_split(content)
+    parts = []                                   # accumulate, don't return
+    for item in doc.iter_inner_content():
+        if isinstance(item, Paragraph):
+            if item.text.strip():
+                parts.append(item.text)          # THIS paragraph
+        elif isinstance(item, Table):
+            serialised_table = serialise_docx_table(item)
+            if serialised_table:
+                parts.append(serialised_table)  # THIS table
+    
+    return content_split("\n".join(parts))

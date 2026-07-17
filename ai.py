@@ -69,10 +69,23 @@ def prepare_top_chunks(top_chunks):
         })
     return docs_list                 
 
+UNIT_WORDS = {"year", "years", "hour", "hours", "day", "days",
+              "week", "weeks", "month", "months", "am", "pm",
+              "dollars", "percent", "%", "cents"}
+
 def extract_clause_number(question):
-    match = re.search(r"\d+\.\d+", question)
-    if match:
-        return match.group()
+    for match in re.finditer(r'\b(\d+(?:\.\d+)?)\b', question):
+        following = question[match.end():].strip().split()
+        next_word = following[0].strip(".,?!").lower() if following else ""
+        if next_word in UNIT_WORDS:
+            continue
+        # bare integers (no dot) must be introduced as clauses
+        if "." not in match.group(1):
+            preceding = question[:match.start()].strip().split()
+            prev_word = preceding[-1].lower() if preceding else ""
+            if prev_word not in {"clause", "section"}:
+                continue                    # it's a quantity — skip, keep looking
+        return match.group(1)           # first clause-like number wins
     return None
 
 def needs_rewrite(question: str) -> bool:
