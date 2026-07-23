@@ -950,3 +950,6 @@ All three defects addressed solo: fragment merge ported from v1, banner-row filt
 *Session note: this log covers a ~2-day sprint (roughly Jul 14–16, 2026). Assistant model may have changed mid-sprint (Claude version switch); no reliable in-conversation marker exists, so results are attributed to prompt/code/data versions only — which is the attribution that matters.*
 
 Multi-document support shipped and verified: 5-step acceptance passed (per-doc retrieval, history isolation both directions, cascade delete, empty-state guard). Three contamination doors closed: retrieval, chat history, rewriter."
+
+## 17.07
+docx path hardened: tables were silently discarded (doc.paragraphs only); fixed via iter_inner_content in-order walk + sentence serializer with pairs-list (merged-header lossless) and garbage-header fallback. Verified via pretraining-control test: model's documented wrong prior (Oct 21 2011) displaced by document-only answer (Oct 11 2012).

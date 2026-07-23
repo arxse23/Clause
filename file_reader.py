@@ -250,14 +250,28 @@ def serialise_docx_table(table):
     
 def read_docx(uploaded_file):
     doc = Document(uploaded_file.stream)
-    parts = []                                   # accumulate, don't return
+
+    chunks = []
+    current_header = "Introduction / Preface"     # ruling 2: pre-heading default
+    current_parts = []
+
+    def close_chunk():
+        content = "\n".join(current_parts).strip()
+        if content:
+            chunks.append({"content": content, "chunk_header": current_header})
+
     for item in doc.iter_inner_content():
         if isinstance(item, Paragraph):
-            if item.text.strip():
-                parts.append(item.text)          # THIS paragraph
+            if item.style.name.startswith("Heading") and item.text.strip():
+                close_chunk()                      # ruling 1: heading = new chunk
+                current_header = item.text.strip()
+                current_parts = []
+            elif item.text.strip():
+                current_parts.append(item.text)
         elif isinstance(item, Table):
-            serialised_table = serialise_docx_table(item)
-            if serialised_table:
-                parts.append(serialised_table)  # THIS table
-    
-    return content_split("\n".join(parts))
+            serialised = serialise_docx_table(item)
+            if serialised:
+                current_parts.append(serialised)
+
+    close_chunk()                                  # don't orphan the last section
+    return chunks
