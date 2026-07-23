@@ -69,4 +69,4 @@ ollama pull nomic-embed-text
 python app.py
 ```
 
-Then open `http://127.0.0.1:5000`, upload a PDF, and ask questions.
+Then open `http://127.0.0.1:5000`, upload a PDF or docx, and ask questions.
