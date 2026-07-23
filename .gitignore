@@ -1,6 +1,15 @@
-__pycache__/
-venv/
+# Runtime artifacts
 assistant.db
+last_ask.txt
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Virtual environment (if you have one)
+venv/
+.venv/
+
+# Test documents — copyrighted, not code
 *.pdf
-/tests
-*.docx

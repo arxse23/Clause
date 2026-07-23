@@ -72,7 +72,7 @@ def chat_history(doc_id):
 def ask():
     data = request.get_json() or {}
     doc_id = data.get("doc_id")
-    question = data.get("question")
+    question = (data.get("question") or "").strip()
     
     if not doc_id or not question:
         return jsonify({"status": "error", "message": "Missing document mapping context or query text."}), 400
